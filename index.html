@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Tic Tac Toe - Viral Game</title>
+    <style>
+        /* Modern neon-style styling */
+        :root {
+            --neon-pink: #ff2a6d;
+            --neon-blue: #05d9e8;
+            --neon-purple: #d300c5;
+            --dark-bg: #0d0221;
+            --glow: 0 0 10px, 0 0 20px;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--dark-bg);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255, 42, 109, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(5, 217, 232, 0.1) 0%, transparent 20%);
+        }
+
+        h1 {
+            color: white;
+            text-shadow: 0 0 5px var(--neon-blue), var(--glow);
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            animation: pulse 2s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { text-shadow: 0 0 5px var(--neon-blue), var(--glow); }
+            to { text-shadow: 0 0 15px var(--neon-blue), 0 0 30px; }
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 15px;
+            margin: 30px auto;
+            width: 300px;
+            height: 300px;
+        }
+
+        .cell {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+        }
+
+        .cell.x {
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+        }
+
+        .cell.o {
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue);
+        }
+
+        .cell.winner {
+            animation: winnerFlash 1s infinite alternate;
+        }
+
+        @keyframes winnerFlash {
+            from { transform: scale(1); }
+            to { transform: scale(1.1); box-shadow: 0 0 30px gold; }
+        }
+
+        .status {
+            margin: 20px 0;
+            font-size: 1.5rem;
+            min-height: 2rem;
+            text-shadow: 0 0 5px white;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            background: transparent;
+            color: white;
+            border: 2px solid var(--neon-purple);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: var(--neon-purple);
+            box-shadow: 0 0 15px var(--neon-purple);
+            transform: translateY(-3px);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: var(--dark-bg);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 80%;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 30px var(--neon-blue);
+        }
+
+        .modal h2 {
+            color: var(--neon-pink);
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .share-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: var(--neon-pink);
+            opacity: 0;
+            z-index: 10;
+        }
+
+        @media (max-width: 500px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .board {
+                width: 260px;
+                height: 260px;
+            }
+            .cell {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>NEON TIC TAC TOE</h1>
+        <div class="status" id="status">Player X's turn</div>
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
+        <div class="controls">
+            <button id="reset">New Game</button>
+            <button id="share">Share Result</button>
+        </div>
+    </div>
+
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <h2 id="resultMessage">You Won!</h2>
+            <button id="continueButton">Continue Playing</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Game state
+            let board = ['', '', '', '', '', '', '', '', ''];
+            let currentPlayer = 'X';
+            let gameActive = true;
+            let moveCount = 0;
+            
+            // DOM elements
+            const cells = document.querySelectorAll('.cell');
+            const statusDisplay = document.getElementById('status');
+            const resetButton = document.getElementById('reset');
+            const shareButton = document.getElementById('share');
+            const resultModal = document.getElementById('resultModal');
+            const resultMessage = document.getElementById('resultMessage');
+            const continueButton = document.getElementById('continueButton');
+            
+            // Winning conditions
+            const winningConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                [0, 4, 8], [2, 4, 6]             // diagonals
+            ];
+            
+            // Sound effects
+            const sounds = {
+                click: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3'),
+                win: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3'),
+                draw: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-retro-arcade-lose-2027.mp3')
+            };
+            
+            // Initialize game
+            function initGame() {
+                board = ['', '', '', '', '', '', '', '', ''];
+                currentPlayer = 'X';
+                gameActive = true;
+                moveCount = 0;
+                statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+                
+                // Reset cell styles
+                cells.forEach(cell => {
+                    cell.textContent = '';
+                    cell.classList.remove('x', 'o', 'winner');
+                    cell.style.transform = 'scale(1)';
+                });
+                
+                // Close any open modal
+                closeModal();
+            }
+            
+            // Handle cell click
+            function handleCellClick(e) {
+                const clickedCell = e.target;
+                const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+                
+                // If cell already used or game not active, ignore
+                if (board[clickedCellIndex] !== '' || !gameActive) return;
+                
+                // Play sound
+                sounds.click.play().catch(e => console.log("Audio play failed:", e));
+                
+                // Update game state
+                board[clickedCellIndex] = currentPlayer;
+                clickedCell.textContent = currentPlayer;
+                clickedCell.classList.add(currentPlayer.toLowerCase());
+                moveCount++;
+                
+                // Animation
+                clickedCell.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    clickedCell.style.transform = 'scale(1)';
+                }, 100);
+                
+                // Check for win or draw
+                checkResult();
+            }
+            
+            // Check game result
+            function checkResult() {
+                let roundWon = false;
+                
+                // Check win conditions
+                for (let i = 0; i < winningConditions.length; i++) {
+                    const [a, b, c] = winningConditions[i];
+                    
+                    if (board[a] === '' || board[b] === '' || board[c] === '') continue;
+                    
+                    if (board[a] === board[b] && board[b] === board[c]) {
+                        roundWon = true;
+                        // Highlight winning cells
+                        cells[a].classList.add('winner');
+                        cells[b].classList.add('winner');
+                        cells[c].classList.add('winner');
+                        break;
+                    }
+                }
+                
+                // If won
+                if (roundWon) {
+                    sounds.win.play().catch(e => console.log("Audio play failed:", e));
+                    statusDisplay.textContent = `Player ${currentPlayer} wins!`;
+                    gameActive = false;
+                    createConfetti();
+                    showResultModal(`Player ${currentPlayer} wins!`);
+                    return;
+                }
+                
+                // If draw
+                if (moveCount === 9) {
+                    sounds.draw.play().catch(e => console.log("Audio play failed:", e));
+                    statusDisplay.textContent = "Game ended in a draw!";
+                    gameActive = false;
+                    showResultModal("Game ended in a draw!");
+                    return;
+                }
+                
+                // Change player
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                statusDisplay.textContent = `Player ${currentPlayer}'s turn`;
+            }
+            
+            // Create confetti effect
+            function createConfetti() {
+                const colors = ['#ff2a6d', '#05d9e8', '#d300c5', '#ff9a03', '#00ff87'];
+                
+                for (let i = 0; i < 100; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                    confetti.style.width = Math.random() * 10 + 5 + 'px';
+                    confetti.style.height = Math.random() * 10 + 5 + 'px';
+                    
+                    document.body.appendChild(confetti);
+                    
+                    // Animation
+                    const animation = confetti.animate([
+                        { top: '-10px', opacity: 1 },
+                        { top: '100vh', opacity: 0 }
+                    ], {
+                        duration: Math.random() * 3000 + 2000,
+                        easing: 'cubic-bezier(0.1, 0.8, 0.9, 1)'
+                    });
+                    
+                    animation.onfinish = () => confetti.remove();
+                }
+            }
+            
+            // Show result modal
+            function showResultModal(message) {
+                resultMessage.textContent = message;
+                resultModal.style.display = 'flex';
+            }
+            
+            // Close modal
+            function closeModal() {
+                resultModal.style.display = 'none';
+            }
+            
+            // Event listeners
+            cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+            resetButton.addEventListener('click', initGame);
+            shareButton.addEventListener('click', () => {
+                const message = gameActive ? 
+                    `I'm playing Neon Tic Tac Toe! Current game: ${statusDisplay.textContent}` : 
+                    `I just played Neon Tic Tac Toe! ${statusDisplay.textContent}`;
+                showResultModal(message);
+            });
+            
+            // Fixed continue button functionality
+            continueButton.addEventListener('click', () => {
+                closeModal();
+                initGame(); // Start a new game when continue is clicked
+            });
+            
+            // Initialize first game
+            initGame();
+        });
+    </script>
+</body>
+</html>
